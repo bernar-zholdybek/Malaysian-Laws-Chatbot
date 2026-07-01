@@ -84,5 +84,5 @@ streamlit run newcode.py
 * **LLM:** Google Generative AI (Gemini)
 
 ## About Chatbot Limits
-    Coverage is limited to the seven acts listed above; questions outside these will return no results
-    The chatbot cannot provide legal advice, it only summarises statute text
+*    Coverage is limited to the seven acts listed above; questions outside these will return no results
+*    The chatbot cannot provide legal advice, it only summarises statute text
