@@ -10,23 +10,23 @@ An AI-powered chatbot built with Streamlit and LangChain that allows to upload P
 
 
 ## Project Structure
-Malaysian-Laws-Chatbot/
-│
-├── laws/                        
-│   ├── employment_act.pdf
-│   ├── contracts_act.pdf
-│   ├── companies_act.pdf
-│   ├── consumer_protection_act.pdf
-│   ├── domestic_violence_act.pdf
-│   ├── penal_code.pdf
-│   └── road_transport_act.pdf
-│
-├── chroma_db/                   # Auto-generated on first run
-│
-├── newcode.py                   # Main code
-├── requirements.txt             # Required dependencies
-├── .env                         # API key 
-└── README.md
+    Malaysian-Laws-Chatbot/
+    │
+    ├── laws/                        
+    │   ├── employment_act.pdf
+    │   ├── contracts_act.pdf
+    │   ├── companies_act.pdf
+    │   ├── consumer_protection_act.pdf
+    │   ├── domestic_violence_act.pdf
+    │   ├── penal_code.pdf
+    │   └── road_transport_act.pdf
+    │
+    ├── chroma_db/                   # Auto-generated on first run
+    │
+    ├── newcode.py                   # Main code
+    ├── requirements.txt             # Required dependencies
+    ├── .env                         # API key 
+    └── README.md
 
 
     
