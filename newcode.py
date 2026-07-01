@@ -8,8 +8,11 @@ from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 
+from dotenv import load_dotenv
+load_dotenv()
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 
-GOOGLE_API_KEY = "...."
+
 
 LAW_PDFS = {
     "laws/companies_act.pdf": {
