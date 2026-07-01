@@ -50,7 +50,7 @@ An AI-powered chatbot built with Streamlit and LangChain that allows to upload P
 
 ## Setup
 
-### 1. Clone the repository
+### 1. Clone Repository
 ```bash
 git clone https://github.com/bernar-zholdybek/Malaysian-Laws-Chatbot.git
 cd Malaysian-Laws-Chatbot
