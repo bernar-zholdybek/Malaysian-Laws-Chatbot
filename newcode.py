@@ -66,11 +66,10 @@ st.caption("Ask me anything about Malaysian law. ")
 def initialize_system():
     """
     Load or build the Chroma vector store.
-    - On first run: ingests all PDFs found on disk.
-    - On subsequent runs: only ingests PDFs not yet in the store.
-    - Missing PDFs are skipped with a warning (app still starts).
+    Returns (vector_store, missing_pdfs, failed_pdfs) so warnings can be
+    shown outside the cache — st.warning inside a cached function only
+    fires on the very first run and is silently skipped on cache hits.
     """
-    # check if database exists 
     os.makedirs(DB_DIR, exist_ok=True)
 
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -79,21 +78,21 @@ def initialize_system():
         chunk_overlap=150,
     )
 
-    # check if pdf already uploaded
     already_done = set()
     if os.path.exists(INGESTED_FLAG):
         with open(INGESTED_FLAG) as f:
             already_done = set(f.read().splitlines())
 
-    # build chunks for pdfs not in the store
-    new_chunks       = []
-    newly_ingested   = []
+    new_chunks     = []
+    newly_ingested = []
+    missing_pdfs   = []
+    failed_pdfs    = []
 
     for filename, meta in LAW_PDFS.items():
         if filename in already_done:
             continue
         if not os.path.exists(filename):
-            st.warning(f"PDF not found: `{filename}` — skipping. Add it to the app folder to enable this act.")
+            missing_pdfs.append(filename)
             continue
 
         with st.spinner(f"Compiling legal database: {meta['act_name']}…"):
@@ -107,31 +106,29 @@ def initialize_system():
                             "act_name":    meta["act_name"],
                             "act_year":    meta["act_year"],
                             "category":    meta["category"],
-                            "page":        i + 1,   # 1-based page number
+                            "page":        i + 1,
                         },
                     )
                     for i, page in enumerate(reader.pages)
-                    if page.extract_text()  # skip blank / image-only pages
+                    if page.extract_text()
                 ]
                 new_chunks.extend(splitter.split_documents(docs))
                 newly_ingested.append(filename)
             except Exception as e:
-                st.warning(f"Could not read `{filename}`: {e}")
+                failed_pdfs.append((filename, str(e)))
 
-    # connect / create the chroma store
     vector_store = Chroma(
         persist_directory=DB_DIR,
         embedding_function=embeddings,
     )
 
-    # add new chunks and record which files are now done
     if new_chunks:
         vector_store.add_documents(new_chunks)
         with open(INGESTED_FLAG, "a") as f:
             for filename in newly_ingested:
                 f.write(filename + "\n")
 
-    return vector_store
+    return vector_store, missing_pdfs, failed_pdfs
 
 
 
@@ -147,7 +144,11 @@ def get_llm():
 
 
 
-vector_store = initialize_system()
+vector_store, missing_pdfs, failed_pdfs = initialize_system()
+for f in missing_pdfs:
+    st.warning(f"PDF not found: `{f}` — skipping. Add it to the `laws/` folder to enable this act.")
+for f, err in failed_pdfs:
+    st.warning(f"Could not read `{f}`: {err}")
 
 
 
@@ -177,7 +178,7 @@ for message in st.session_state.chat_history:
             with st.expander("View source clauses"):
                 for ref in message["references"]:
                     st.markdown(
-                        f"** {ref['act_name']} ({ref['act_year']})** "
+                        f"**{ref['act_name']} ({str(ref['act_year'])})** "
                         f"— Page {ref['page']} · *{ref['category']}*"
                     )
                     st.info(ref["text"])
@@ -214,7 +215,7 @@ if user_query := st.chat_input("Type your legal question here…"):
                     )
 
                     # filter low-confidence results
-                    results = [(doc, score) for doc, score in results if score >= 0.4]
+                    results = [(doc, score) for doc, score in results if score >= 0.2]
 
                     if not results:
                         response = (
@@ -252,6 +253,13 @@ if user_query := st.chat_input("Type your legal question here…"):
                         joined_context = "\n\n".join(context_parts)
 
                         # PROMPT
+                        # build recent conversation history (last 6 messages)
+                        history_lines = []
+                        for msg in st.session_state.chat_history[1:][-6:]:
+                            role = "User" if msg["role"] == "user" else "Assistant"
+                            history_lines.append(f"{role}: {msg['content']}")
+                        history_block = "\n".join(history_lines)
+
                         prompt = f"""You are MY-LawBot, a helpful assistant specialising in Malaysian law.
 
 Using ONLY the legal clauses provided below, write a clear and friendly plain-English answer to the user's question.
@@ -262,16 +270,18 @@ Your response must:
 - Use short paragraphs — no bullet lists, no raw clause numbers unless essential.
 - If the clauses do not contain enough information to answer the question fully, say so honestly.
 - Do NOT reproduce the raw clause text verbatim in your answer.
+- If the user refers to something mentioned earlier in the conversation (e.g. "what about the penalty?"), use the conversation history to understand what they mean.
 
 Retrieved legal clauses:
 {joined_context}
+
+Recent conversation:
+{history_block}
 
 User question: {user_query}
 
 Plain-English answer:"""
 
-
-                        
                         # call LLM
                         llm = get_llm()
                         summary = llm.invoke(prompt).content
@@ -282,7 +292,7 @@ Plain-English answer:"""
                         with st.expander("View source clauses"):
                             for ref in references_data:
                                 st.markdown(
-                                    f"** {ref['act_name']} ({ref['act_year']})** "
+                                    f"**{ref['act_name']} ({str(ref['act_year'])})** "
                                     f"— Page {ref['page']} · *{ref['category']}*"
                                 )
                                 st.info(ref["text"])
