@@ -32,16 +32,10 @@ An AI-powered chatbot built with Streamlit and LangChain that allows to upload P
 * Python 3.10
 * Free Google Gemini API key (can be acquired at aistudio.google.com)
 * PDF files of law acts, placed in the laws/ folder
-
-    
-## Tech Stack
-* **UI:** Streamlit
-* **Orchestration:** LangChain
-* **Vector Database:** ChromaDB
-* **Embeddings:** HuggingFace (`sentence-transformers`)
-* **LLM:** Google Generative AI (Gemini)
+  
 
 ## Required Libraries
+    python-dotenv
     streamlit
     langchain
     langchain-huggingface
@@ -54,22 +48,41 @@ An AI-powered chatbot built with Streamlit and LangChain that allows to upload P
     sentence-transformers
 
 
-## 1. Dependecy Installation
+## Setup
 
+### 1. Clone the repository
+```bash
+git clone https://github.com/bernar-zholdybek/Malaysian-Laws-Chatbot.git
+cd Malaysian-Laws-Chatbot
+```
+
+### 2. Dependecy Installation
 Install all the required packages
-
 ```bash
 pip install -r requirements.txt
 ```
 
-## 2. How to Run
-Move to the project folder 
-
-``` bash 
-cd Downloads/example_location_project_folder
+### 3. Set your API key
+Get API key at aistudio.google.com. Create a .env file in the project root with this text inside:
+```bash
+GOOGLE_API_KEY = API_key_from_website
 ```
 
+### 4. How to Run
 Run the programm
 ```bash
 streamlit run newcode.py
 ```
+    note: app will build the vector database from the PDFs automatically. This takes a few minutes. Subsequent starts are instant.
+
+    
+## Tech Stack
+* **UI:** Streamlit
+* **Orchestration:** LangChain
+* **Vector Database:** ChromaDB
+* **Embeddings:** HuggingFace (`sentence-transformers`)
+* **LLM:** Google Generative AI (Gemini)
+
+## About Chatbot Limits
+    Coverage is limited to the seven acts listed above; questions outside these will return no results
+    The chatbot cannot provide legal advice, it only summarises statute text
