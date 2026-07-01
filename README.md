@@ -71,7 +71,7 @@ GOOGLE_API_KEY = API_key_from_website
 ### 4. How to Run
 Run the programm
 ```bash
-streamlit run newcode.py
+streamlit run app.py
 ```
 (note: app will build the vector database from the PDFs automatically. This takes a few minutes. Subsequent starts are instant.)
 
