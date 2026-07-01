@@ -29,19 +29,22 @@ An AI-powered chatbot built with Streamlit and LangChain that allows to upload P
     sentence-transformers
 
 
-## 1. How to Install
+## 1. Dependecy Installation
 
-Install the required packages for the RAG and LLM
+Install all the required packages
 
 ```bash
 pip install -r requirements.txt
 ```
-    
-## 2. How to Run
-move to project folder 
+
+## 2. 
+Move to the project folder 
 
 ``` bash 
 cd Downloads/your_project_folder
+```
 
+Run the programm
+```bash
 streamlit run newcode.py
 ```
