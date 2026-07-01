@@ -21,10 +21,10 @@ An AI-powered chatbot built with Streamlit and LangChain that allows to upload P
     │   ├── penal_code.pdf
     │   └── road_transport_act.pdf
     │
-    ├── chroma_db/                   # Auto-generated on first run
+    ├── chroma_db/                   # auto-generated on first run
     │
-    ├── newcode.py                   # Main code
-    ├── requirements.txt             # Required dependencies
+    ├── newcode.py                   # main code
+    ├── requirements.txt             # required dependencies
     ├── .env                         # API key 
     └── README.md
 
