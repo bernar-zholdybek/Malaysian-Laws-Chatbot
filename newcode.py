@@ -7,9 +7,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-# ---------------------------------------------------------------------------
-# CONFIGURATION
-# ---------------------------------------------------------------------------
+
 
 GOOGLE_API_KEY = "...."
 
@@ -51,28 +49,18 @@ LAW_PDFS = {
     },
 }
 
-DB_DIR        = "./chroma_db"
+DB_DIR = "./chroma_db"
 INGESTED_FLAG = os.path.join(DB_DIR, ".ingested_acts")
 
-# ---------------------------------------------------------------------------
-# PAGE CONFIG — must be the first Streamlit call
-# ---------------------------------------------------------------------------
 
-st.set_page_config(
-    page_title="MY-LawBot",
-    page_icon="🏛️",
-    layout="centered",
-)
 
-st.title("🏛️ MY-LawBot: Malaysian Law Assistant")
-st.caption(
-    "Ask me anything about Malaysian law. "
-    "I'll give you a plain-English summary with sources."
-)
+st.set_page_config(page_title="MY-LawBot", page_icon="🏛️", layout="centered")
+st.title("MY-LawBot: Malaysian Law Chatbot")
+st.caption("Ask me anything about Malaysian law. ")
 
-# ---------------------------------------------------------------------------
-# CACHED BACKEND: vector store (runs once, survives reruns)
-# ---------------------------------------------------------------------------
+
+
+# VECTOR STORE
 
 @st.cache_resource
 def initialize_system():
@@ -82,7 +70,7 @@ def initialize_system():
     - On subsequent runs: only ingests PDFs not yet in the store.
     - Missing PDFs are skipped with a warning (app still starts).
     """
-    # Ensure the DB directory exists before we try to write the flag file
+    # check if database exists 
     os.makedirs(DB_DIR, exist_ok=True)
 
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -91,13 +79,13 @@ def initialize_system():
         chunk_overlap=150,
     )
 
-    # Find out which PDFs are already ingested
+    # check if pdf already uploaded
     already_done = set()
     if os.path.exists(INGESTED_FLAG):
         with open(INGESTED_FLAG) as f:
             already_done = set(f.read().splitlines())
 
-    # Build chunks for any PDFs not yet in the store
+    # build chunks for pdfs not in the store
     new_chunks       = []
     newly_ingested   = []
 
@@ -130,13 +118,13 @@ def initialize_system():
             except Exception as e:
                 st.warning(f"Could not read `{filename}`: {e}")
 
-    # Connect to (or create) the Chroma store
+    # connect / create the chroma store
     vector_store = Chroma(
         persist_directory=DB_DIR,
         embedding_function=embeddings,
     )
 
-    # Add new chunks and record which files are now done
+    # add new chunks and record which files are now done
     if new_chunks:
         vector_store.add_documents(new_chunks)
         with open(INGESTED_FLAG, "a") as f:
@@ -146,28 +134,24 @@ def initialize_system():
     return vector_store
 
 
-# ---------------------------------------------------------------------------
-# CACHED BACKEND: LLM (runs once, not recreated on every message)
-# ---------------------------------------------------------------------------
+
+# LLM
 
 @st.cache_resource
 def get_llm():
     return ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-lite",
-        google_api_key=GOOGLE_API_KEY,
-        temperature=0.1,   # low = factual, not creative
+        model = "gemini-2.5-flash-lite",
+        google_api_key = GOOGLE_API_KEY,
+        temperature = 0.1,
     )
 
 
-# ---------------------------------------------------------------------------
-# BOOT
-# ---------------------------------------------------------------------------
 
 vector_store = initialize_system()
 
-# ---------------------------------------------------------------------------
-# CHAT HISTORY
-# ---------------------------------------------------------------------------
+
+
+# chat history
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
@@ -180,42 +164,42 @@ if "chat_history" not in st.session_state:
         }
     ]
 
-# ---------------------------------------------------------------------------
-# DISPLAY EXISTING CHAT HISTORY
-# ---------------------------------------------------------------------------
+
+
+# display chat history
 
 for message in st.session_state.chat_history:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-        # Show source clauses only for assistant messages that have them
+        # show source clauses
         if message.get("references"):
-            with st.expander("⚖️ View source clauses"):
+            with st.expander("View source clauses"):
                 for ref in message["references"]:
                     st.markdown(
-                        f"**📄 {ref['act_name']} ({ref['act_year']})** "
+                        f"** {ref['act_name']} ({ref['act_year']})** "
                         f"— Page {ref['page']} · *{ref['category']}*"
                     )
                     st.info(ref["text"])
                     st.divider()
 
-# ---------------------------------------------------------------------------
-# HANDLE NEW USER INPUT
-# ---------------------------------------------------------------------------
+
+
+# USER INPUT
 
 if user_query := st.chat_input("Type your legal question here…"):
 
-    # Show the user message immediately
+    # show the user message
     with st.chat_message("user"):
         st.markdown(user_query)
     st.session_state.chat_history.append({"role": "user", "content": user_query})
 
     with st.chat_message("assistant"):
 
-        # Guard: need an API key to call the LLM
+        # check for API key to call the LLM
         if not GOOGLE_API_KEY:
             msg = (
-                "⚠️ No Google Gemini API key found. "
+                "No Google Gemini API key found. "
                 "Set the `GOOGLE_API_KEY` environment variable and restart the app."
             )
             st.warning(msg)
@@ -224,12 +208,12 @@ if user_query := st.chat_input("Type your legal question here…"):
         else:
             with st.spinner("Searching statutes and generating summary…"):
                 try:
-                    # 1. RETRIEVAL — find the most relevant legal chunks
+                    # find most relevant legal chunks
                     results = vector_store.similarity_search_with_relevance_scores(
                         user_query, k=5
                     )
 
-                    # Filter out low-confidence results (below 0.4 cosine similarity)
+                    # filter low-confidence results
                     results = [(doc, score) for doc, score in results if score >= 0.4]
 
                     if not results:
@@ -244,14 +228,14 @@ if user_query := st.chat_input("Type your legal question here…"):
                         )
 
                     else:
-                        # 2. BUILD CONTEXT — include act name in each clause header
+                        # build context
                         context_parts  = []
                         references_data = []
 
                         for idx, (doc, score) in enumerate(results):
                             act  = doc.metadata.get("act_name", "Unknown Act")
                             year = doc.metadata.get("act_year", "")
-                            pg   = doc.metadata.get("page", 0)   # already 1-based
+                            pg   = doc.metadata.get("page", 0)
 
                             context_parts.append(
                                 f"Clause {idx + 1} [{act} {year}, page {pg}]:\n"
@@ -267,7 +251,7 @@ if user_query := st.chat_input("Type your legal question here…"):
 
                         joined_context = "\n\n".join(context_parts)
 
-                        # 3. PROMPT
+                        # PROMPT
                         prompt = f"""You are MY-LawBot, a helpful assistant specialising in Malaysian law.
 
 Using ONLY the legal clauses provided below, write a clear and friendly plain-English answer to the user's question.
@@ -286,23 +270,25 @@ User question: {user_query}
 
 Plain-English answer:"""
 
-                        # 4. CALL THE LLM (cached, not re-created each turn)
-                        llm     = get_llm()
+
+                        
+                        # call LLM
+                        llm = get_llm()
                         summary = llm.invoke(prompt).content
 
-                        # 5. DISPLAY
+                        # display summary
                         st.markdown(summary)
 
-                        with st.expander("⚖️ View source clauses"):
+                        with st.expander("View source clauses"):
                             for ref in references_data:
                                 st.markdown(
-                                    f"**📄 {ref['act_name']} ({ref['act_year']})** "
+                                    f"** {ref['act_name']} ({ref['act_year']})** "
                                     f"— Page {ref['page']} · *{ref['category']}*"
                                 )
                                 st.info(ref["text"])
                                 st.divider()
 
-                        # 6. SAVE TO HISTORY
+                        # save to history
                         st.session_state.chat_history.append({
                             "role":       "assistant",
                             "content":    summary,
@@ -311,7 +297,7 @@ Plain-English answer:"""
 
                 except Exception as e:
                     error_msg = (
-                        "⚠️ Something went wrong while generating the answer. "
+                        "Something went wrong while generating the answer. "
                         "Please try again in a moment."
                     )
                     st.error(error_msg)
