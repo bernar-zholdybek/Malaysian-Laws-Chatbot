@@ -1,4 +1,4 @@
-# PDF RAG Chatbot Assistant
+# PDF RAG Malaysian Laws Chatbot
 An AI-powered chatbot built with Streamlit and LangChain that allows to upload PDF documents, index them into a local vector database, and have context-aware conversations using the Google Gemini API.
 
 
