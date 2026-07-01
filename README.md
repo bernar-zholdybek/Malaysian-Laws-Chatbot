@@ -23,7 +23,7 @@ An AI-powered chatbot built with Streamlit and LangChain that allows to upload P
     │
     ├── chroma_db/                   # auto-generated on first run
     │
-    ├── app.py                   # main code
+    ├── app.py                       # main code
     ├── requirements.txt             # required dependencies
     ├── .env                         # API key 
     └── README.md
