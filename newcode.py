@@ -11,7 +11,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 # CONFIGURATION
 # ---------------------------------------------------------------------------
 
-GOOGLE_API_KEY = "AQ.Ab8RN6LGGsz3G-8t5Va3O_wSwPgERTZozrYdLG1LazJowv0efQ"
+GOOGLE_API_KEY = "...."
 
 LAW_PDFS = {
     "laws/companies_act.pdf": {
