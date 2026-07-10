@@ -67,6 +67,10 @@ Get API key at *aistudio.google.com*. Create a .env file in the project root wit
 ```bash
 GOOGLE_API_KEY = API_key_from_website
 ```
+Example
+<img width="339" height="76" alt="image" src="https://github.com/user-attachments/assets/b6dc268f-c184-473c-a7d3-29a84fc2041a" />
+
+
 
 ### 4. How to Run
 Run the programm
